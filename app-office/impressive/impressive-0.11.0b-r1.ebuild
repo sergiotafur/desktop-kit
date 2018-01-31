@@ -1,7 +1,7 @@
-# Copyright 1999-2017 Gentoo Foundation
+# Copyright 1999-2015 Gentoo Foundation
 # Distributed under the terms of the GNU General Public License v2
 
-EAPI=6
+EAPI=5
 
 PYTHON_COMPAT=( python2_7 )
 
@@ -20,33 +20,45 @@ IUSE=""
 
 DEPEND=""
 RDEPEND="${PYTHON_DEPS}
+	app-text/pdftk
 	dev-python/pygame[${PYTHON_USEDEP}]
 	dev-python/pillow[${PYTHON_USEDEP}]
 	x11-apps/xrandr
-	app-text/mupdf
+	|| (
+		app-text/mupdf
+		app-text/poppler
+		app-text/ghostscript-gpl
+		)
 	|| ( media-fonts/dejavu media-fonts/corefonts )"
 REQUIRED_USE="${PYTHON_REQUIRED_USE}"
 
-DOCS=(
-	changelog.txt
-	demo.pdf
-)
-HTML_DOCS=(
-	impressive.html
-)
-
 S=${WORKDIR}/${MY_PN}-${PV}
 
+src_prepare() {
+	sed \
+		-e 's:tostring:tobytes:g' \
+		-i impressive.py || die
+}
+
 src_install() {
-	default
 	python_foreach_impl python_doscript ${PN}.py
+
+	# compatibility symlinks
+	dosym impressive.py /usr/bin/impressive
+	dosym impressive.py /usr/bin/keyjnote
+
+	# docs
 	doman impressive.1
+	dohtml impressive.html
+	dodoc changelog.txt demo.pdf
 }
 
 pkg_postinst() {
 	elog "The experience with ${PN} can be enhanced by folowing packages:"
-	optfeature "starting web or e-mail hyperlinks from PDF documents" x11-misc/xdg-utils
-	optfeature "sound and video playback" media-video/mplayer
-	optfeature "sound and video playback" media-video/mplayer2
-	optfeature "extraction of PDF page titles" app-text/pdftk
+	optfeature "Starting web or e-mail hyperlinks from PDF documents" x11-misc/xdg-utils
+	optfeature "Sound and video playback" media-video/mplayer
+	optfeature "Sound and video playback" media-video/mplayer2
+	optfeature "Alternate PDF rendering" app-text/mupdf
+	optfeature "Alternate PDF rendering" app-text/poppler
+	optfeature "Alternate PDF rendering" app-text/ghostscript-gpl
 }
